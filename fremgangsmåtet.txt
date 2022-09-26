@@ -1,0 +1,20 @@
+(OPTIONAL) Sorter punkter inne i "bokser" 
+Lag en super trekant som omringer alle punktene. 
+
+
+- Trekant { int a, b, c; neighbours
+- Trekant Array 
+
+
+
+S-HULL
+1. Velg et punkt (P0). 
+2. Sorter alle punktene bassert på distansen til distansen til P0 og velg det nærmeste punktet P1
+3. Finn punktet P2 som lager den minste circum sirkelen og lagre midtpunktet til sirkelen C_p.
+4. Definer trekanten som P0, P1 og P2
+5. Sorter deretter punktene etter distansen til C_p i en liste D1
+6. Deretter legg til ett og ett punkt fra D1 til hullet og lag nye trekanter 
+
+
+
+IMGUI fra 
