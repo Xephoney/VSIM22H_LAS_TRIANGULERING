@@ -7,3 +7,6 @@ CONFIG -= qt
 
 SOURCES += \
         main.cpp
+
+HEADERS += \
+    stb_image_write.h
