@@ -108,23 +108,11 @@ struct point
     float z{0.f};
     int counter{0};
 };
-
+void eksporter(std::vector<vec3>& points);
 void komprimer(std::vector<vec3>& pts, const float& opplosning )
 {
-    const int bredde = (int)ceil(dimensions[0]/4.f);
-    const int dybde =  (int)ceil(dimensions[2]/4.f);
-    //std::vector<std::vector<std::pair<vec3, int>>> arr(bredde, vector<std::pair<vec3, int>>(dybde, { vec3{0.f}, 0}));
-    //new float*[bredde][dybde]
-    //    for(int z = 0; z < dybde; z++)
-    //    {
-    //        for(int x = 0; x < bredde; x++)
-    //        {
-    //            arr[x][z].first[0]  = (double)x;
-    //            arr[x][z].first[1]  = 0.f;
-    //            arr[x][z].first[2]  = (double)z;
-    //            arr[x][z].second = 0;
-    //        }
-    //    }
+    const int bredde = (int)ceil(dimensions[0]/opplosning);
+    const int dybde =  (int)ceil(dimensions[2]/opplosning);
     point** arr = new point*[bredde];
     for(int i = 0; i < bredde; i++)
     {
@@ -133,8 +121,8 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
 
     for(const vec3& pt : pts)
     {
-        const int iX = (int)floor(pt[0]/4.f);
-        const int iZ = (int)floor(pt[2]/4.f);
+        const int iX = (int)floor(pt[0]/opplosning);
+        const int iZ = (int)floor(pt[2]/opplosning);
         if(iX < 0.f || iZ < 0.f)
         {
             std::cout << "x: "<<pt[0]<<" | z: " <<pt[2];
@@ -166,7 +154,7 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
             {
                 arr[x][z].y = shortSort(pts, vec3(x, 0, z));
             }
-            pts.push_back(vec3{(double)x,arr[x][z].y, (double)z});
+            newPoints.push_back(vec3{(double)x,arr[x][z].y, (double)z});
         }
     }
 //    std::for_each(std::execution::par_unseq, arr, arr+sizeof(point)*bredde*dybde, [&pts](point* point)
@@ -183,6 +171,7 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
 //    });
     _dybde = dybde;
     _bredde = bredde;
+    eksporter(newPoints);
 }
 
 void eksporter(std::vector<vec3>& points)
@@ -332,10 +321,10 @@ int main()
     lesFil("../VSIM22H_LAS_TRIANGULERING/Gol.txt", points);
     std::cout << "\n step 1 done\n";
 
-    komprimer(points, 4.0);
+    komprimer(points, 1.0);
     std::cout << "\n step 2 done\n";
 
-    eksporter(points);
+
 
     std::cout << "\n Program Ferdig\n";
     return 0;
