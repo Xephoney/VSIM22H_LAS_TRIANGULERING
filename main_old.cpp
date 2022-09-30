@@ -15,14 +15,7 @@ using namespace std;
 
 int _bredde;
 int _dybde;
-int _height;
-float dimensions[3] {0.f, 0.f, 0.f};
-
-bool Cmp(const float a, const float b, const float epsilon = 0.0005f)
-{
-    return (fabs(a - b) < epsilon);
-}
-
+double dimensions[3] {0.f, 0.f, 0.f};
 struct vec3
 {
     vec3()
@@ -31,27 +24,27 @@ struct vec3
         xyz[1] = 0;
         xyz[2] = 0;
     }
-    vec3(float inp)
+    vec3(double inp)
     {
         xyz[0] = inp;
         xyz[1] = inp;
         xyz[2] = inp;
     }
-    vec3(float _x,float _y,float _z)
+    vec3(double _x,double _y,double _z)
     {
         xyz[0] = _x;
         xyz[1] = _y;
         xyz[2] = _z;
     }
-    float operator [] (int i) const { return xyz[i]; }
-    float& operator [] (int i) { return xyz[i]; }
-    float operator - (vec3& a)
+    double operator [] (int i) const { return xyz[i]; }
+    double& operator [] (int i) { return xyz[i]; }
+    double operator - (vec3& a)
     {
         return pow(a.xyz[0] - xyz[0], 2) +
                 pow(a.xyz[2] - xyz[2], 2);
     }
 private:
-    float xyz[3];
+    double xyz[3];
 };
 
 float shortSort(std::vector<vec3>& points, vec3 referance);
@@ -115,159 +108,70 @@ struct point
     float z{0.f};
     int counter{0};
 };
-
+void eksporter(std::vector<vec3>& points);
 void komprimer(std::vector<vec3>& pts, const float& opplosning )
 {
     const int bredde = (int)ceil(dimensions[0]/opplosning);
     const int dybde =  (int)ceil(dimensions[2]/opplosning);
     point** arr = new point*[bredde];
-
     for(int i = 0; i < bredde; i++)
     {
         arr[i] = new point[dybde];
-        for (int j = 0; j < dybde; ++j)
-        {
-             arr[i][j].counter = 0;
-             arr[i][j].x = i;
-             arr[i][j].y = 0.f;
-             arr[i][j].z = j;
-        }
     }
 
     for(const vec3& pt : pts)
     {
         const int iX = (int)floor(pt[0]/opplosning);
         const int iZ = (int)floor(pt[2]/opplosning);
-
+        if(iX < 0.f || iZ < 0.f)
+        {
+            std::cout << "x: "<<pt[0]<<" | z: " <<pt[2];
+        }
+        arr[iX][iZ].x = pt[0];
         arr[iX][iZ].y += pt[1];
+        arr[iX][iZ].z = pt[2];
         arr[iX][iZ].counter += 1;
     }
 
-
-    std::atomic<int> cnt = 0; //std::atomic<int> x = 0;
-    std::for_each(std::execution::par_unseq, arr, (point**)((size_t)arr + (bredde * sizeof(size_t))), [dybde, bredde, &cnt, opplosning](point* points) mutable
-    {
-        for (int z = 0; z < dybde; ++z)
-        {
-            auto& point = points[z];
-            cnt++;
-            std::cout << "looping... (" << cnt << "/" << bredde*dybde << ")\n";
-
-            if(point.counter != 0)
-            {
-                point.y = (point.y / (float)point.counter)/opplosning;
-            }
-            else
-            {
-                //point.y = (shortSort(pts, vec3(point.x,0,point.z)))/opplosning;
-            }
-        }
-    });
-
-    std::cout << "Main loop completed \n";
-
-
-    for(int y = 0; y < 40; y++)
-    {
-        std::cout << "Smoothing step ("<<y+1<<"/"<<40<<")\n";
-        for(int i = 0; i < bredde-1; i++)
-            for(int j = 0; j < dybde-1; j++)
-            {
-
-                float avg = 0;
-                int counter = 0;
-                if(i != 0 && j != 0)
-                {
-                    avg += arr[i-1][j-1].y;counter++;
-                }
-                if(i > 0)
-                {
-                    avg += arr[i-1][j].y; counter++;
-                    avg += arr[i-1][j+1].y; counter++;
-                }
-                if(j > 0)
-                {
-                    avg += arr[i][j-1].y; counter++;
-                    avg += arr[i+1][j-1].y; counter++;
-                }
-
-                avg += arr[i+1][j].y;counter++;
-                avg += arr[i+1][j+1].y;counter++;
-                avg += arr[i][j+1].y;counter++;
-                avg /= (float)counter;
-                float diff = arr[i][j].y-avg;
-                arr[i][j].y = avg;
-
-            }
-    }
-/*
-
+    std::vector<vec3> newPoints;
+    newPoints.reserve(bredde * dybde);
     int cnt = 0;
-    for(int z = 0 ; z< dybde; z++)
-        for(int x = 0 ; x< bredde; x++)
-        {
-            cnt++;
-            std::cout << "looping... (" << cnt << "/" << bredde*dybde << ")\n";
-
-            auto& point = arr[x][z];
-            point.x = x; point.z = z;
-            if(point.counter != 0)
-            {
-                point.y = point.y / (float)point.counter;
-            }
-            else
-            {
-                point.y = shortSort(pts, vec3(x,0,z));
-            }
-
-        }
-    */
-
-    pts.clear();
-
     for(int z = 0; z < dybde; z++)
     {
         for(int x = 0; x < bredde; x++)
         {
-            pts.emplace_back(vec3(arr[x][z].x, arr[x][z].y, arr[x][z].z));
+            cnt++;
+            system("cls");
+            std::cout << "looping... (" <<cnt <<"/"<< bredde*dybde<<")\n";
+            std::cout << "|- z loop  (" <<z <<"/"<< dybde<<")\n";
+            std::cout << "|- x loop  (" <<x <<"/"<< bredde<<")\n";
+
+            if(arr[x][z].counter != 0)
+            {
+                arr[x][z].y = arr[x][z].y / (float)arr[x][z].counter;
+            }
+            else
+            {
+                arr[x][z].y = shortSort(pts, vec3(x, 0, z));
+            }
+            newPoints.push_back(vec3{(double)x,arr[x][z].y, (double)z});
         }
     }
-    std::cout << "Sorting pts " << std::endl;
+//    std::for_each(std::execution::par_unseq, arr, arr+sizeof(point)*bredde*dybde, [&pts](point* point)
+//    {
 
-    struct {
-            bool operator()(vec3& a, vec3& b) const {
-
-                if (a[2] < b[2]) return true;
-                if (b[2] < a[2]) return false;
-
-                if (a[0] < b[0]) return true;
-                if (b[0] < a[0]) return false;
-
-                return false;
-            }
-        } customLess;
-
-    std::sort(pts.begin(), pts.end(), customLess);
-
-
-    /*
-    for (int i = 0; i < pts.size(); i++)
-    {
-        float sampleVal = 0; float numSamples = 0.f;
-        for(int u = 0; u < 5; u++)
-            for(int v = 0; v < 5 && u * bredde + i + v < pts.size(); v++)
-            {
-                sampleVal = pts[u * bredde + i + v][1];
-                numSamples += 1.f;
-            }
-
-        pts[i][1] = sampleVal / numSamples;
-    }
-*/
-
+//        if(point->counter != 0)
+//        {
+//            point->y = point->y / (float)point->counter;
+//        }
+//        else
+//        {
+//            point->y = shortSort(pts, vec3(point->x,0,point->z));
+//        }
+//    });
     _dybde = dybde;
     _bredde = bredde;
-    _height = dimensions[1];
+    eksporter(newPoints);
 }
 
 void eksporter(std::vector<vec3>& points)
@@ -304,44 +208,12 @@ void eksporter(std::vector<vec3>& points)
     {
         file << indices[i]<<"\n";
     }
-    file.close();
+}
 
-// PNG BITEN!
-    //er kun ute etter rgb
-    uint32_t Kanaler = 3;
-    int size{0};
-    if(_bredde < _dybde)
-        size = _bredde;
-    else
-        size = _dybde;
-
-//Hentet fra http://chanhaeng.blogspot.com/2018/12/how-to-use-stbimagewrite.html
-    // Med noen modifikasjoner til size og filnavn
-    points.size();
-    uint8_t* pixels = new uint8_t[_bredde * _dybde * Kanaler];
-    int index = 0;
-    for (int j = _dybde - 1; j >= 0; --j)
-    {
-        for (int i = 0; i < _bredde; ++i)
-        {
-            int pointIndex = j * _bredde + i;
-            float r = points[pointIndex][1]/_height;
-            float g = points[pointIndex][1]/_height;
-            float b = points[pointIndex][1]/_height;
-            int ir = int(255.99 * r);
-            int ig = int(255.99 * g);
-            int ib = int(255.99 * b);
-
-            pixels[index++] = ir;
-            pixels[index++] = ig;
-            pixels[index++] = ib;
-        }
-    }
-    std::string exportNavn = "../VSIM22H_LAS_TRIANGULERING/png/"+navn + "_compressed.png";
-    stbi_write_png( exportNavn.c_str(), _bredde, _dybde, Kanaler, pixels, _bredde * Kanaler);
-    delete[] pixels;
-
-
+void lagPNG(std::vector<vec3>& points)
+{
+    //int stbi_write_png(char const *filename, int w, int h, int comp, const void *data, int stride_in_bytes);
+    //stbi_write_png("png_testing",_bredde,_dybde,);
 }
 
 struct helper
@@ -379,17 +251,80 @@ float shortSort(std::vector<vec3>& points, vec3 referancePoint)
     return returnValue/10.f;
 }
 
+void komprimer2(std::vector<vec3>& pts, float resolution)
+{
+
+    // Kode som regner ut antall punkter i den nye meshen
+    // Hvor totalen er xPoints * zPoints;
+    const int xPoints = (int)ceil(dimensions[0] / resolution);
+    const int zPoints = (int)ceil(dimensions[2] / resolution);
+    const int amount = xPoints * zPoints;
+
+    std::vector<vec3> vertices;
+    vertices.reserve(amount);
+
+    // Formelen for å finne indexen til et punkt er
+    // z * xPoints + x;
+
+    int counter{0};
+    for(int j = 0; j < zPoints; j++)
+    {
+        for(int i = 0; i < xPoints; i++)
+        {
+            counter++;
+            system("cls");
+            std::cout << "Loop count ("<<counter<<"/"<<amount<<")";
+            vec3 temp {(double)i, 0.f, (double)j};
+            temp[1] = shortSort( pts, temp);
+            vertices.push_back(temp);
+        }
+    }
+    std::vector<int> indexes;
+    for(int j = 0; j < zPoints-1; j++)
+        for(int i = 0; i < xPoints-1; i++)
+        {
+            int idx = j * xPoints + i;
+
+            indexes.push_back(idx);
+            indexes.push_back(idx+1);
+            indexes.push_back(idx+1+xPoints);
+            indexes.push_back(idx+1+xPoints);
+            indexes.push_back(idx+xPoints);
+            indexes.push_back(idx);
+        }
+    system("cls");
+    std::cout << "Loop Complete ("<<counter<<"/"<<amount<<")\n";
+    std::string navn;
+    std::cout << "\n\n----- EKSPORTERING -----\n";
+    std::cout << "Hva skal den komprimerte filen hete? \n|-> ";
+    std::cin >> navn;
+    std::cout << "\nEksporterer nå til " << navn << "_compressed.txt";
+
+    fstream file;
+    file.open("../VSIM22H_LAS_TRIANGULERING/"+navn+"_compressed.txt", ios_base::out);
+    file << vertices.size()<<"\n";
+    for(int i = 0; i < vertices.size(); i++)
+    {
+        file << "("<<vertices[i][0]<<", "<<vertices[i][1]<<", "<<vertices[i][2]<<")"<<"\n";
+    }
+    file << indexes.size()<<"\n";;
+    for(int i = 0; i < indexes.size(); i++)
+    {
+        file << indexes[i]<<"\n";
+    }
+}
+
 int main()
 {
     std::vector <vec3> points;
     std::cout << "\n starting read\n";
-    lesFil("../VSIM22H_LAS_TRIANGULERING/Fjell2_xyz.txt", points);
+    lesFil("../VSIM22H_LAS_TRIANGULERING/Gol.txt", points);
     std::cout << "\n step 1 done\n";
 
-    komprimer(points, 2.0);
+    komprimer(points, 1.0);
     std::cout << "\n step 2 done\n";
 
-    eksporter(points);
+
 
     std::cout << "\n Program Ferdig\n";
     return 0;
