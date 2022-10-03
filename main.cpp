@@ -50,6 +50,7 @@ struct vec3
         return pow(a.xyz[0] - xyz[0], 2) +
                 pow(a.xyz[2] - xyz[2], 2);
     }
+
 private:
     float xyz[3];
 };
@@ -70,8 +71,12 @@ void lesFil(const std::string& filePath, std::vector <vec3>& points)
         float temp[3];
         std::cout << std::fixed;
         std::cout << std::setprecision(3);
+        system("cls");
+        std::cout << " Reading file\n";
         while (true)
         {
+            if(points.size()%100000 == 0)
+                std::cout << "| "<<points.size()<<"\n";
             //Henter ut x, z, og y siden filen betrakter siste tallet som opp
             // Strukturen i temp er nå x, y og z ;)
 
@@ -118,8 +123,8 @@ struct point
 
 void komprimer(std::vector<vec3>& pts, const float& opplosning )
 {
-    const int bredde = (int)ceil(dimensions[0]/opplosning);
-    const int dybde =  (int)ceil(dimensions[2]/opplosning);
+    const int bredde = (int)ceil(dimensions[0]/opplosning)+1;
+    const int dybde =  (int)ceil(dimensions[2]/opplosning)+1;
     point** arr = new point*[bredde];
 
     for(int i = 0; i < bredde; i++)
@@ -128,16 +133,16 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
         for (int j = 0; j < dybde; ++j)
         {
              arr[i][j].counter = 0;
-             arr[i][j].x = i;
+             arr[i][j].x = i * opplosning;
              arr[i][j].y = 0.f;
-             arr[i][j].z = j;
+             arr[i][j].z = j * opplosning;
         }
     }
 
     for(const vec3& pt : pts)
     {
-        const int iX = (int)floor(pt[0]/opplosning);
-        const int iZ = (int)floor(pt[2]/opplosning);
+        const int iX = (int)floor(pt[0] / opplosning);
+        const int iZ = (int)floor(pt[2] / opplosning);
 
         arr[iX][iZ].y += pt[1];
         arr[iX][iZ].counter += 1;
@@ -155,7 +160,7 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
 
             if(point.counter != 0)
             {
-                point.y = (point.y / (float)point.counter)/opplosning;
+                point.y = (point.y / (float)point.counter) / opplosning;
             }
             else
             {
@@ -166,10 +171,11 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
 
     std::cout << "Main loop completed \n";
 
+    int smoothingIterations = 5;
 
-    for(int y = 0; y < 40; y++)
+    for(int y = 0; y < smoothingIterations; y++)
     {
-        std::cout << "Smoothing step ("<<y+1<<"/"<<40<<")\n";
+        std::cout << "Smoothing step ("<<y+1<<"/"<<smoothingIterations<<")\n";
         for(int i = 0; i < bredde-1; i++)
             for(int j = 0; j < dybde-1; j++)
             {
@@ -270,7 +276,7 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
     _height = dimensions[1];
 }
 
-void eksporter(std::vector<vec3>& points)
+void eksporter(std::vector<vec3>& points, const float& opplosning)
 {
     //Simplifisering
     std::vector<uint32_t> indices;
@@ -310,21 +316,24 @@ void eksporter(std::vector<vec3>& points)
     //er kun ute etter rgb
     uint32_t Kanaler = 3;
     int size{0};
-    if(_bredde < _dybde)
-        size = _bredde;
+    int bredde = _bredde * opplosning;
+    int dybde = _dybde * opplosning;
+    int høyde = _height * opplosning;
+    if(bredde < dybde)
+        size = bredde;
     else
-        size = _dybde;
+        size = dybde;
 
 //Hentet fra http://chanhaeng.blogspot.com/2018/12/how-to-use-stbimagewrite.html
     // Med noen modifikasjoner til size og filnavn
     points.size();
-    uint8_t* pixels = new uint8_t[_bredde * _dybde * Kanaler];
+    uint8_t* pixels = new uint8_t[bredde * dybde * Kanaler];
     int index = 0;
-    for (int j = _dybde - 1; j >= 0; --j)
+    for (int j = dybde - 1; j >= 0; --j)
     {
-        for (int i = 0; i < _bredde; ++i)
+        for (int i = 0; i < bredde; ++i)
         {
-            int pointIndex = j * _bredde + i;
+            int pointIndex = j * bredde + i;
             float r = points[pointIndex][1]/_height;
             float g = points[pointIndex][1]/_height;
             float b = points[pointIndex][1]/_height;
@@ -338,10 +347,8 @@ void eksporter(std::vector<vec3>& points)
         }
     }
     std::string exportNavn = "../VSIM22H_LAS_TRIANGULERING/png/"+navn + "_compressed.png";
-    stbi_write_png( exportNavn.c_str(), _bredde, _dybde, Kanaler, pixels, _bredde * Kanaler);
+    stbi_write_png( exportNavn.c_str(), bredde, dybde, Kanaler, pixels, bredde * Kanaler);
     delete[] pixels;
-
-
 }
 
 struct helper
@@ -384,13 +391,12 @@ int main()
     std::vector <vec3> points;
     std::cout << "\n starting read\n";
     lesFil("../VSIM22H_LAS_TRIANGULERING/Fjell2_xyz.txt", points);
+    //lesFil("../VSIM22H_LAS_TRIANGULERING/stoooor.txt", points);
     std::cout << "\n step 1 done\n";
 
-    komprimer(points, 2.0);
+    komprimer(points, 1.0);
     std::cout << "\n step 2 done\n";
-
-    eksporter(points);
-
+    eksporter(points, 1.0);
     std::cout << "\n Program Ferdig\n";
     return 0;
 }
