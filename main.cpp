@@ -6,7 +6,7 @@
 #include <math.h>
 #include <iomanip>
 #include <execution>
-
+//#include <boost/gil.hpp>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "stb_image_write.h"
@@ -75,7 +75,7 @@ void lesFil(const std::string& filePath, std::vector <vec3>& points)
         std::cout << " Reading file\n";
         while (true)
         {
-            if(points.size()%100000 == 0)
+            if(points.size() % 1000000 == 0)
                 std::cout << "| "<<points.size()<<"\n";
             //Henter ut x, z, og y siden filen betrakter siste tallet som opp
             // Strukturen i temp er nå x, y og z ;)
@@ -104,6 +104,7 @@ void lesFil(const std::string& filePath, std::vector <vec3>& points)
         p[1] -= min[1];
         p[2] -= min[2];
     }
+
     for(int i = 0; i < 3; i++)
         dimensions[i] = max[i] - min[i];
 
@@ -150,13 +151,14 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
 
 
     std::atomic<int> cnt = 0; //std::atomic<int> x = 0;
+    std::cout << "looping over points...\n";
     std::for_each(std::execution::par_unseq, arr, (point**)((size_t)arr + (bredde * sizeof(size_t))), [dybde, bredde, &cnt, opplosning](point* points) mutable
     {
         for (int z = 0; z < dybde; ++z)
         {
             auto& point = points[z];
             cnt++;
-            std::cout << "looping... (" << cnt << "/" << bredde*dybde << ")\n";
+//            std::cout << "looping... (" << cnt << "/" << bredde*dybde << ")\n";
 
             if(point.counter != 0)
             {
@@ -171,7 +173,7 @@ void komprimer(std::vector<vec3>& pts, const float& opplosning )
 
     std::cout << "Main loop completed \n";
 
-    int smoothingIterations = 5;
+    int smoothingIterations = 30;
 
     for(int y = 0; y < smoothingIterations; y++)
     {
@@ -298,56 +300,64 @@ void eksporter(std::vector<vec3>& points, const float& opplosning)
     std::cin >> navn;
     std::cout << "\nEksporterer nå til " << navn << "_compressed.txt";
 
-    fstream file;
-    file.open("../VSIM22H_LAS_TRIANGULERING/"+navn+"_compressed.txt", ios_base::out);
-    file << points.size()<<"\n";
-    for(int i = 0; i < points.size(); i++)
-    {
-        file << "("<<points[i][0]<<", "<<points[i][1]<<", "<<points[i][2]<<")"<<"\n";
-    }
-    file << indices.size()<<"\n";;
-    for(int i = 0; i < indices.size(); i++)
-    {
-        file << indices[i]<<"\n";
-    }
-    file.close();
+//    fstream file;
+//    file.open("../VSIM22H_LAS_TRIANGULERING/"+navn+"_compressed.txt", ios_base::out);
+////        file << (const char*)points.size();
+////        file.write((const char*)points.data(), points.size() * sizeof(vec3));
+////        file << (const char*)indices.size();
+////        file.write((const char*)indices.data(), indices.size() * sizeof(uint32_t));
+//    for(int i = 0; i < points.size(); i++)
+//    {
+//        file << "("<<points[i][0]<<", "<<points[i][1]<<", "<<points[i][2]<<")"<<"\n";
+//    }
+//    file << indices.size()<<"\n";;
+//    for(int i = 0; i < indices.size(); i++)
+//    {
+//        file << indices[i]<<"\n";
+//    }
+//    file.close();
 
 // PNG BITEN!
     //er kun ute etter rgb
-    uint32_t Kanaler = 3;
-    int size{0};
-    int bredde = _bredde * opplosning;
-    int dybde = _dybde * opplosning;
-    int høyde = _height * opplosning;
-    if(bredde < dybde)
-        size = bredde;
-    else
-        size = dybde;
-
+    uint32_t Kanaler = 1;
+    int size{1024};
+    int bredde = _bredde;
+    int dybde = _dybde;
+    int høyde = _height;
+//    if(bredde < dybde)
+//        size = bredde;
+//    else
+//        size = dybde;
 //Hentet fra http://chanhaeng.blogspot.com/2018/12/how-to-use-stbimagewrite.html
     // Med noen modifikasjoner til size og filnavn
-    points.size();
-    uint8_t* pixels = new uint8_t[bredde * dybde * Kanaler];
+    //points.size();
+    float* pixels = new float[size * size * Kanaler];
     int index = 0;
-    for (int j = dybde - 1; j >= 0; --j)
+
+    for (int j = size-1; j >= 0; --j)
     {
-        for (int i = 0; i < bredde; ++i)
+        for (int i = 0; i < size; ++i)
         {
             int pointIndex = j * bredde + i;
-            float r = points[pointIndex][1]/_height;
-            float g = points[pointIndex][1]/_height;
-            float b = points[pointIndex][1]/_height;
-            int ir = int(255.99 * r);
-            int ig = int(255.99 * g);
-            int ib = int(255.99 * b);
+            float r = points[pointIndex][1]/(float)_height;
+            //std::cout << " | r : " << r << "\n";
+//            float g = points[pointIndex][1]/_height;
+//            float b = points[pointIndex][1]/_height;
+            //int ir = int(255.99 * r);
+//            int ig = int(255.99 * g);
+//            int ib = int(255.99 * b);
 
-            pixels[index++] = ir;
-            pixels[index++] = ig;
-            pixels[index++] = ib;
+//            pixels[index++] = ir;
+//            pixels[index++] = ig;
+//            pixels[index++] = ib;
+            pixels[index++] = r;
+//            pixels[index++] = g;
+//            pixels[index++] = b;
         }
     }
-    std::string exportNavn = "../VSIM22H_LAS_TRIANGULERING/png/"+navn + "_compressed.png";
-    stbi_write_png( exportNavn.c_str(), bredde, dybde, Kanaler, pixels, bredde * Kanaler);
+    std::string exportNavn = "../VSIM22H_LAS_TRIANGULERING/png/"+navn + "_compressed.hdr";
+    //stbi_write_png( exportNavn.c_str(), size, size, Kanaler, pixels, size * Kanaler);
+    stbi_write_hdr(exportNavn.c_str(), size, size, Kanaler, pixels);
     delete[] pixels;
 }
 
@@ -390,13 +400,14 @@ int main()
 {
     std::vector <vec3> points;
     std::cout << "\n starting read\n";
-    lesFil("../VSIM22H_LAS_TRIANGULERING/Fjell2_xyz.txt", points);
-    //lesFil("../VSIM22H_LAS_TRIANGULERING/stoooor.txt", points);
+    //lesFil("../VSIM22H_LAS_TRIANGULERING/Fjell2.txt", points);
+    lesFil("../VSIM22H_LAS_TRIANGULERING/stoooor.txt", points);
+    //lesFil("../VSIM22H_LAS_TRIANGULERING/Gol.txt", points);
     std::cout << "\n step 1 done\n";
 
-    komprimer(points, 1.0);
+    komprimer(points, 4.0);
     std::cout << "\n step 2 done\n";
-    eksporter(points, 1.0);
+    eksporter(points, 4.0);
     std::cout << "\n Program Ferdig\n";
     return 0;
 }
